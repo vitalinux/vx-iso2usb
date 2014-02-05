@@ -1,0 +1,82 @@
+#!/bin/bash
+
+function partition
+{
+echo "
+d
+4
+d
+3
+d
+2
+d
+1
+n
+p
+1
+
+
+a
+1
+w
+" > respuesta.fdisk
+fdisk $_DISK < respuesta.fdisk >/dev/null
+rm respuesta.fdisk
+}
+
+
+
+function detect_usb(){
+   LANG=POSIX
+   _disks=`lsblk -d |grep disk|awk '{print $1}'`
+
+    for _disk in $_disks ; do
+      udevadm info --query=all  --name=$_disk |grep ID_BUS=usb  > /dev/null
+      if [ $? = 0 ]; then
+        _size=`fdisk -l | grep "Disk /dev/$_disk:" | awk '{print $3$4}' | sed 's/,//'`
+        _DISCOS="$_DISCOS $_disk $_size"
+      fi
+      done
+      _usb=`zenity --title='iso2usb' --text='Seleccione dispositivo usb' --window-icon='migasfree' --list --width 600 --height 400 --print-column=1 --column='dispositivo' --column=' ' $_DISCOS`
+      if [ $? = 0 ] ; then
+         echo $_usb
+      fi
+}
+
+
+_FILE_ISO=`zenity --file-selection --title="Seleccione el fichero .iso" --file-filter="*.iso" --confirm-overwrite`
+case $? in
+         1)
+                echo "No file selected."
+                exit 1
+                ;;
+        -1)
+                echo "An unexpected error has occurred."
+                exit -1
+                ;;
+esac
+
+_USB=$(detect_usb)
+if [ -z $_USB ] ; then
+  exit 1
+fi
+
+_DISK="/dev/$_USB"
+_PART="1"
+
+if zenity --question --text="Se va a copiar $_FILE_ISO en $_DISK eliminándose cualquier contenido de éste dispositivo. ¿Está seguro?"; then
+  #desmontamos el usb
+  umount $_DISK$_PART
+
+  # creamos la particion
+  partition
+
+  # formateamos a fat32
+  mkfs.vfat -F 32 $_DISK$_PART
+
+  # copiar el fichero iso
+  dd if=$_FILE_ISO of=$_DISK bs=4M; sync
+
+  zenity --info --text "Se ha copiado $_FILE_ISO en $_DISK"
+
+fi

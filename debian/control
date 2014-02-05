@@ -1,0 +1,13 @@
+Source: vx-iso2usb
+Section: utils
+Priority: extra
+Maintainer: Alberto Gacias <alberto@migasfree.org>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: http://github.com/vitalinux/vx-iso2usb
+
+Package: vx-iso2usb
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, 
+Description: Copy iso file to usb
+ Copy iso file to usb
