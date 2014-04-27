@@ -1,5 +1,6 @@
 #!/bin/bash
 
+_TITLE="ISO a USB"
 function partition
 {
 echo "
@@ -37,14 +38,14 @@ function detect_usb(){
         _DISCOS="$_DISCOS $_disk $_size"
       fi
       done
-      _usb=`zenity --title='iso2usb' --text='Seleccione dispositivo usb' --window-icon='migasfree' --list --width 600 --height 400 --print-column=1 --column='dispositivo' --column=' ' $_DISCOS`
+      _usb=`zenity --title="$_TITLE" --text='Seleccione dispositivo usb' --window-icon='migasfree' --list --width 600 --height 400 --print-column=1 --column='dispositivo' --column=' ' $_DISCOS`
       if [ $? = 0 ] ; then
          echo $_usb
       fi
 }
 
 
-_FILE_ISO=`zenity --file-selection --title="Seleccione el fichero .iso" --file-filter="*.iso" --confirm-overwrite`
+_FILE_ISO=`zenity --file-selection --title="$_TITLE. Seleccione el fichero .iso" --file-filter="*.iso" --confirm-overwrite`
 case $? in
          1)
                 echo "No file selected."
@@ -64,7 +65,7 @@ fi
 _DISK="/dev/$_USB"
 _PART="1"
 
-if zenity --question --text="Se va a copiar $_FILE_ISO en $_DISK eliminándose cualquier contenido de éste dispositivo. ¿Está seguro?"; then
+if zenity --question --title="$_TITLE" --text="Se va a copiar $_FILE_ISO en $_DISK eliminándose cualquier contenido de éste dispositivo. ¿Está seguro?"; then
   #desmontamos el usb
   umount $_DISK$_PART
 
@@ -75,8 +76,16 @@ if zenity --question --text="Se va a copiar $_FILE_ISO en $_DISK eliminándose c
   mkfs.vfat -F 32 $_DISK$_PART
 
   # copiar el fichero iso
-  dd if=$_FILE_ISO of=$_DISK bs=4M; sync
+  (
+  echo "10" ;
+  echo "# No retires el dispositivo USB.\nCopiando $_FILE_ISO ..." ;
+  dd if=$_FILE_ISO of=$_DISK bs=4M;
+  sync;
+  echo "100" ;
+  ) |
+zenity --width=400 --height=100 --progress --title="$_TITLE" --auto-close --no-cancel --percentage=0 --pulsate
 
-  zenity --info --text "Se ha copiado $_FILE_ISO en $_DISK"
+  # Avisamos al usuario que el proceso ha finalizado.
+  zenity --info --title="$_TITLE" --text "Se ha copiado $_FILE_ISO en $_DISK.\nYa puedes retirar el dispositivo USB."
 
 fi
