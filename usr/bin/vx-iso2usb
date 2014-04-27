@@ -66,18 +66,14 @@ _DISK="/dev/$_USB"
 _PART="1"
 
 if zenity --question --title="$_TITLE" --text="Se va a copiar $_FILE_ISO en $_DISK eliminándose cualquier contenido de éste dispositivo. ¿Está seguro?"; then
-  #desmontamos el usb
-  umount $_DISK$_PART
-
-  # creamos la particion
-  partition
-
-  # formateamos a fat32
-  mkfs.vfat -F 32 $_DISK$_PART
-
-  # copiar el fichero iso
+    # copiar el fichero iso
   (
   echo "10" ;
+  echo "# No retires el dispositivo USB.\nFormateando USB..." ;
+  umount $_DISK$_PART
+  partition ;
+  mkfs.vfat -F 32 $_DISK$_PART;
+  echo "20" ;
   echo "# No retires el dispositivo USB.\nCopiando $_FILE_ISO ..." ;
   dd if=$_FILE_ISO of=$_DISK bs=4M;
   sync;
